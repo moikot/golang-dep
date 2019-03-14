@@ -1,0 +1,50 @@
+sudo: required
+
+dist: xenial
+
+language: bash
+
+services:
+  - docker
+
+env:
+  global:
+    - DOCKER_PLATFORMS="linux/amd64,linux/arm/v6,linux/arm64/v8"
+    - DOCKER_COMMIT=${TRAVIS_COMMIT::6}
+    - DOCKER_TAG="${TRAVIS_TAG}"
+    - BUILDKIT_HOST=tcp://0.0.0.0:1234
+    - DOCKER_CLI_EXPERIMENTAL=enabled
+
+addons:
+  apt:
+    packages:
+      - docker-ce
+
+git:
+  depth: 1
+
+before_install: >
+  ./.travis/setup.sh \
+    "${DOCKER_PLATFORMS}"
+
+jobs:
+  include:
+    - script: >
+        ./.travis/build.sh \
+          "${DOCKER_IMAGE}" \
+          "${DOCKER_COMMIT}" \
+          "${DOCKER_PLATFORMS}"
+
+deploy:
+  provider: script
+  script: >-
+    bash ./.travis/push.sh
+    "${DOCKER_IMAGE}"
+    "${DOCKER_COMMIT}"
+    "${DOCKER_TAG}"
+    "${DOCKER_PLATFORMS}"
+  on:
+    tags: true
+
+notifications:
+  email: false
