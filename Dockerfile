@@ -5,10 +5,10 @@ FROM golang:${GO_VERSION}-alpine
 
 LABEL maintainer="sanisimov@moikot.com"
 
-RUN apk add --no-cache musl-dev \
+RUN apk add --no-cache musl-dev git \
     \
     # Install build dependencies
-    && apk add --no-cache --virtual .build-deps ca-certificates gcc git \
+    && apk add --no-cache --virtual .build-deps ca-certificates gcc \
     \
     # Download Dep's packages
     && go get -d -u github.com/golang/dep \
