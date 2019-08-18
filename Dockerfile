@@ -1,14 +1,19 @@
-ARG GO_VERSION=1.12.1
-ARG DEP_VERSION=v0.5.1
+ARG GO_VERSION=1.12.9
+ARG DEP_VERSION=v0.5.4
 
-FROM golang:${GO_VERSION}-alpine
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine as build-env
 
 LABEL maintainer="sanisimov@moikot.com"
 
-RUN apk add --no-cache musl-dev git \
-    \
-    # Install build dependencies
-    && apk add --no-cache --virtual .build-deps ca-certificates gcc \
+# xx wraps go to automatically configure $GOOS, $GOARCH, and $GOARM
+# based on TARGETPLATFORM provided by Docker.
+COPY --from=tonistiigi/xx:golang / /
+
+# Compile independent executable using go wrapper from xx:golang
+ARG TARGETPLATFORM
+RUN CGO_ENABLED=0
+
+RUN apk add --no-cache git \
     \
     # Download Dep's packages
     && go get -d -u github.com/golang/dep \
@@ -18,15 +23,15 @@ RUN apk add --no-cache musl-dev git \
     && git checkout ${DEP_VERSION} \
     \
     # Build Dep from source
-    && go install -ldflags="-X main.version=${DEP_VERSION}" ./cmd/dep \
-    \
-    # Install Dep's license
-    && mkdir -p /usr/local/share/doc/dep \
-    && cp LICENSE /usr/local/share/doc/dep/LICENSE \
-    \
-    # Remove source code and packages
-    && rm -rf $(go env GOPATH)/src/github.com/golang/dep \
-    && apk del .build-deps
+    && go build -ldflags="-X main.version=${DEP_VERSION}" \
+    -o $(go env GOPATH)/bin/dep ./cmd/dep
+
+FROM golang:${GO_VERSION}-alpine
+
+RUN mkdir -p /usr/local/share/doc/dep
+
+COPY --from=build-env /go/bin/dep /go/bin/dep
+COPY --from=build-env /go/src/github.com/golang/dep/LICENSE /usr/local/share/doc/dep/LICENSE
 
 ENTRYPOINT ["dep"]
 CMD ["--help"]
