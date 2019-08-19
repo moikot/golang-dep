@@ -21,7 +21,7 @@ before_install:
   - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   - sudo apt-get update
   - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
-  # Get scripts for building multi-architectural Docker images and manifests
+  # Get scripts for building Docker images
   - id=$(docker create moikot/mua-docker-tools:master)
   - docker cp $id:/scripts.sh /tmp/mua-scripts.sh
   - docker rm -v $id
@@ -40,27 +40,30 @@ matrix:
     - stage: build amd64
       script:
         - >-
-          bash -c "/tmp/mua-scripts.sh build_images
-          ${TRAVIS_REPO_SLUG} ${TRAVIS_COMMIT::6} "linux/amd64"
-          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
+          /tmp/mua-scripts.sh build_images
+          ${TRAVIS_REPO_SLUG} ${TRAVIS_COMMIT::6} linux/amd64
 
     - stage: build and deploy master
       script:
         - >-
-          bash -c "/tmp/mua-scripts.sh build_images
-          ${TRAVIS_REPO_SLUG} master ${DOCKER_PLATFORMS}
-          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
+          echo "${DOCKER_PASSWORD}" |
+          docker login -u "${DOCKER_USERNAME}" --password-stdin
+        - >-
+          /tmp/mua-scripts.sh build_images
+          ${TRAVIS_REPO_SLUG} master ${DOCKER_PLATFORMS} --push
 
     - stage: build and deploy a version
       script:
         - >-
-          bash -c "/tmp/mua-scripts.sh build_images
-          ${TRAVIS_REPO_SLUG} ${TRAVIS_TAG} ${DOCKER_PLATFORMS}
-          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
+          echo "${DOCKER_PASSWORD}" |
+          docker login -u "${DOCKER_USERNAME}" --password-stdin
         - >-
-          bash -c "/tmp/mua-scripts.sh push_readme
+          /tmp/mua-scripts.sh build_images
+          ${TRAVIS_REPO_SLUG} ${TRAVIS_TAG} ${DOCKER_PLATFORMS} --push
+        - >-
+          /tmp/mua-scripts.sh push_readme
           ${TRAVIS_REPO_SLUG} README.md
-          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
+          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}
 
 notifications:
   email: false
