@@ -15,16 +15,11 @@ git:
 before_install:
   # Registering file format recognizers since RUN command is used
   - sudo docker run --privileged linuxkit/binfmt:v0.7
-  # Update docker to the latest version, enable experimental mode, enable BuildKit
-  - echo '{"experimental":true,"features":{"buildkit":true}}' | sudo tee /etc/docker/daemon.json
-  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-  - sudo apt-get update
-  - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
   # Get scripts for building Docker images
   - id=$(docker create moikot/mua-docker-tools:master)
-  - docker cp $id:/scripts.sh /tmp/mua-scripts.sh
-  - docker rm -v $id
+  - docker cp $id:/scripts.sh /tmp/mua-scripts.sh && docker rm -v $id
+  # Update docker to the latest version and enable BuildKit
+  - /tmp/mua-scripts.sh update_docker
 
 stages:
   - name: build amd64
