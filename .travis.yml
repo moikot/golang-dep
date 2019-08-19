@@ -1,14 +1,12 @@
-sudo: required
 dist: bionic
-
-language: bash
+os: linux
+language: shell
 
 services:
   - docker
 
 env:
   global:
-    - COMMIT=${TRAVIS_COMMIT::6}
     - DOCKER_PLATFORMS="linux/amd64,linux/arm64,linux/ppc64le,linux/s390x,linux/386,linux/arm/v7,linux/arm/v6"
 
 git:
@@ -28,24 +26,38 @@ before_install:
   - docker cp $id:/scripts.sh /tmp/mua-scripts.sh
   - docker rm -v $id
 
-script:
-  # Build Docker images
-  - >-
-    bash -c "/tmp/mua-scripts.sh build_images
-    ${TRAVIS_REPO_SLUG} master ${DOCKER_PLATFORMS}
-    ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
+stages:
+  - name: build_amd64
+    if: branch != master
+  - name: build_deploy_master
+    if: branch = master
+  - name: build_deploy_tag
+    if: branch = master AND tag =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
 
-deploy:
-  provider: script
-  script: >-
-    bash -c "/tmp/mua-scripts.sh build_images
-    ${TRAVIS_REPO_SLUG} ${TRAVIS_TAG} ${DOCKER_PLATFORMS}
-    ${DOCKER_USERNAME} ${DOCKER_PASSWORD} &&
-    /tmp/mua-scripts.sh push_readme
-    ${TRAVIS_REPO_SLUG} README.md
-    ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
-  on:
-    tags: true
+matrix:
+  include:
+    - stage: build_arm64
+      script:
+        - >-
+          bash -c "/tmp/mua-scripts.sh build_images
+          ${TRAVIS_REPO_SLUG} ${TRAVIS_COMMIT::6} "linux/amd64"
+          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
+    - stage: build_deploy_master
+      script:
+        - >-
+          bash -c "/tmp/mua-scripts.sh build_images
+          ${TRAVIS_REPO_SLUG} master ${DOCKER_PLATFORMS}
+          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
+    - stage: build_deploy_tag
+      script:
+        - >-
+          bash -c "/tmp/mua-scripts.sh build_images
+          ${TRAVIS_REPO_SLUG} ${TRAVIS_TAG} ${DOCKER_PLATFORMS}
+          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
+        - >-
+          bash -c "/tmp/mua-scripts.sh push_readme
+          ${TRAVIS_REPO_SLUG} README.md
+          ${DOCKER_USERNAME} ${DOCKER_PASSWORD}"
 
 notifications:
   email: false
