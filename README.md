@@ -3,9 +3,14 @@
 A multi-platform image for golang [dep tool](https://github.com/golang/dep).
 
 [![Build Status](https://travis-ci.com/moikot/golang-dep.svg?branch=master)](https://travis-ci.com/moikot/golang-dep)
+
 ![Platform](https://img.shields.io/badge/platform-linux%2Famd64-blue.svg)
+![Platform](https://img.shields.io/badge/platform-linux%2Farm/v6-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-linux%2Farm/v7-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-linux%2Farm64-blue.svg)
+![Platform](https://img.shields.io/badge/platform-linux%2Fppc64le-blue.svg)
+![Platform](https://img.shields.io/badge/platform-linux%2Fs390x-blue.svg)
+![Platform](https://img.shields.io/badge/platform-linux%2Fs386-blue.svg)
 
 ## How to Build
 
