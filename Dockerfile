@@ -28,7 +28,8 @@ RUN apk add --no-cache git \
 
 FROM golang:${GO_VERSION}-alpine
 
-RUN mkdir -p /usr/local/share/doc/dep
+RUN apk add --no-cache git \
+   && mkdir -p /usr/local/share/doc/dep
 
 COPY --from=build-env /go/bin/dep /go/bin/dep
 COPY --from=build-env /go/src/github.com/golang/dep/LICENSE /usr/local/share/doc/dep/LICENSE
